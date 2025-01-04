@@ -413,11 +413,11 @@ class ControlLDM(LatentDiffusion):
         samples, intermediates = ddim_sampler.sample(ddim_steps, batch_size, shape, cond, verbose=False, **kwargs)
         return samples, intermediates
 
-    def configure_optimizers(self):
-        lr = self.learning_rate
-        params = list(self.control_model.parameters())
-        if not self.sd_locked:
-            params += list(self.model.diffusion_model.output_blocks.parameters())
+    def configure_optimizers(self):      ## Handles the locked U-NET part ??? (if not locked then add the parameters to the updating schedule)
+        lr = self.learning_rate          ## If this is true, then these locked params are stored at model.diffusion_model.output_blocks.parameters() and at 
+        params = list(self.control_model.parameters())   ## model.diffusion_model.out.parameters() which I have to check out
+        if not self.sd_locked:            ## And also the parameters are control_model.parameters() which are different from self.model or self.cond_stage_model
+            params += list(self.model.diffusion_model.output_blocks.parameters()) ## or self.first_stage_model
             params += list(self.model.diffusion_model.out.parameters())
         opt = torch.optim.AdamW(params, lr=lr)
         return opt
