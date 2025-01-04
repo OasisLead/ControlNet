@@ -285,22 +285,22 @@ class ControlNet(nn.Module):
         t_emb = timestep_embedding(timesteps, self.model_channels, repeat_only=False)
         emb = self.time_embed(t_emb)
 
-        guided_hint = self.input_hint_block(hint, emb, context)
+        guided_hint = self.input_hint_block(hint, emb, context) ##Le Hint est relié au Time_Embedding par "input_hint_block"
 
         outs = []
 
-        h = x.type(self.dtype)
-        for module, zero_conv in zip(self.input_blocks, self.zero_convs):
+        h = x.type(self.dtype)   
+        for module, zero_conv in zip(self.input_blocks, self.zero_convs):    ##On itère sur les Zero-Conv et les modules, par paire ou sur toute les combi possibles?
             if guided_hint is not None:
                 h = module(h, emb, context)
                 h += guided_hint
                 guided_hint = None
             else:
                 h = module(h, emb, context)
-            outs.append(zero_conv(h, emb, context))
+            outs.append(zero_conv(h, emb, context))   ##On ajoute à Out la zero_conv à laquelle on a ajouté le guided_hint pour la première partie (comment on va freeze ?)
 
         h = self.middle_block(h, emb, context)
-        outs.append(self.middle_block_out(h, emb, context))
+        outs.append(self.middle_block_out(h, emb, context)) ## On ajoute aussi le block du milieu dans le controlNet , que l'on va concaténer avec l'autre bloc du milieu de l'autre U-net ?
 
         return outs
 
